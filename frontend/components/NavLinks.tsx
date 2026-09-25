@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const links = [
-  { href: "/", label: "ร้านทั้งหมด", match: (p: string) => p === "/" || p.startsWith("/restaurants") },
-  { href: "/bookings", label: "การจองของฉัน", match: (p: string) => p.startsWith("/bookings") },
-  { href: "/owner", label: "ร้านของฉัน", match: (p: string) => p.startsWith("/owner") },
-];
+import { t, type Locale } from "@/lib/i18n";
 
 // Client Component เพราะต้องรู้ URL ปัจจุบัน (usePathname) เพื่อไฮไลต์เมนู
-export default function NavLinks() {
+export default function NavLinks({ locale }: { locale: Locale }) {
   const pathname = usePathname();
+  const s = t[locale];
+  const links = [
+    { href: "/", label: s.navAll, match: (p: string) => p === "/" || p.startsWith("/restaurants") },
+    { href: "/bookings", label: s.navBookings, match: (p: string) => p.startsWith("/bookings") },
+    { href: "/owner", label: s.navOwner, match: (p: string) => p.startsWith("/owner") },
+  ];
   return (
     <>
       {links.map((l) => (

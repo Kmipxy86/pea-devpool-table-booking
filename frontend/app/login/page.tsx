@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { safeNext } from "@/lib/format";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 
 type Props = { searchParams: Promise<{ next?: string }> };
 
@@ -8,24 +10,26 @@ type Props = { searchParams: Promise<{ next?: string }> };
 export default async function LoginPage({ searchParams }: Props) {
   const { next } = await searchParams;
   const nextQs = safeNext(next) !== "/" ? `?next=${encodeURIComponent(safeNext(next))}` : "";
+  const locale = await getLocale();
+  const s = t[locale];
   return (
     <div className="auth">
       <section className="auth-side">
-        <h1>{"บัญชีเดียว\nจองร้านคนอื่น\nเปิดร้านของเรา"}</h1>
-        <div className="role"><i /><div><b>ลูกค้าและผู้รีวิว</b><p className="small muted">ดูร้าน จอง แก้ไข ยกเลิก และให้คะแนนร้านของคนอื่น</p></div></div>
-        <div className="role"><i className="white" /><div><b>เจ้าของร้าน</b><p className="small muted">สร้างร้าน ตั้งที่นั่ง เวลาเปิด–ปิด และเวลายกเลิกล่วงหน้า</p></div></div>
+        <h1>{s.loginHeroTitle}</h1>
+        <div className="role"><i /><div><b>{s.loginRoleCustomer}</b><p className="small muted">{s.loginRoleCustomerDesc}</p></div></div>
+        <div className="role"><i className="white" /><div><b>{s.loginRoleOwner}</b><p className="small muted">{s.loginRoleOwnerDesc}</p></div></div>
       </section>
       <section className="auth-form">
         <div style={{ width: "100%", maxWidth: 420, display: "flex", flexDirection: "column", gap: 18 }}>
           <div className="stack" style={{ gap: 4 }}>
-            <h2 style={{ fontSize: 28 }}>ยินดีต้อนรับ</h2>
-            <p className="muted small">เข้าสู่ระบบด้วยบัญชี Keycloak เพื่อจองโต๊ะหรือจัดการร้านของคุณ</p>
+            <h2 style={{ fontSize: 28 }}>{s.loginTitle}</h2>
+            <p className="muted small">{s.loginSubtitle}</p>
           </div>
-          <Link href={`/api/auth/login${nextQs}`} className="btn btn-primary btn-lg">เข้าสู่ระบบด้วย Keycloak</Link>
+          <Link href={`/api/auth/login${nextQs}`} className="btn btn-primary btn-lg">{s.loginCta}</Link>
           <div className="alert alert-info" style={{ flexDirection: "column", gap: 2 }}>
-            <b>บัญชีทดสอบ (รหัสผ่าน password123)</b>
-            <span className="mono xs">customer@example.com — ลูกค้า</span>
-            <span className="mono xs">owner@example.com — เจ้าของ 2 ร้าน</span>
+            <b>{s.loginDemoTitle}</b>
+            <span className="mono xs">customer@example.com — {s.loginDemoCustomer}</span>
+            <span className="mono xs">owner@example.com — {s.loginDemoOwner}</span>
           </div>
         </div>
       </section>

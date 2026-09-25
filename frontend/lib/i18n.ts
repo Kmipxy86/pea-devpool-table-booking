@@ -1,0 +1,46 @@
+// รายการข้อความ UI (ไม่รวมข้อมูลร้าน/รีวิวที่มาจาก DB ซึ่งเป็นภาษาไทยเสมอ)
+export type Locale = "th" | "en";
+export const LOCALE_COOKIE = "tb_locale";
+
+export const t = {
+  th: {
+    brand: "โต๊ะว่าง",
+    mainNav: "เมนูหลัก",
+    login: "เข้าสู่ระบบ",
+    logout: "ออกจากระบบ",
+    navAll: "ร้านทั้งหมด",
+    navBookings: "การจองของฉัน",
+    navOwner: "ร้านของฉัน",
+    loginTitle: "ยินดีต้อนรับ",
+    loginSubtitle: "เข้าสู่ระบบด้วยบัญชี Keycloak เพื่อจองโต๊ะหรือจัดการร้านของคุณ",
+    loginCta: "เข้าสู่ระบบด้วย Keycloak",
+    loginHeroTitle: "บัญชีเดียว\nจองร้านคนอื่น\nเปิดร้านของเรา",
+    loginRoleCustomer: "ลูกค้าและผู้รีวิว",
+    loginRoleCustomerDesc: "ดูร้าน จอง แก้ไข ยกเลิก และให้คะแนนร้านของคนอื่น",
+    loginRoleOwner: "เจ้าของร้าน",
+    loginRoleOwnerDesc: "สร้างร้าน ตั้งที่นั่ง เวลาเปิด–ปิด และเวลายกเลิกล่วงหน้า",
+    loginDemoTitle: "บัญชีทดสอบ (รหัสผ่าน password123)",
+    loginDemoCustomer: "ลูกค้า",
+    loginDemoOwner: "เจ้าของ 2 ร้าน",
+  },
+  en: {
+    brand: "TableBook",
+    mainNav: "Main menu",
+    login: "Sign in",
+    logout: "Log out",
+    navAll: "All restaurants",
+    navBookings: "My bookings",
+    navOwner: "My restaurants",
+    loginTitle: "Welcome",
+    loginSubtitle: "Sign in with your Keycloak account to book a table or manage your restaurant.",
+    loginCta: "Sign in with Keycloak",
+    loginHeroTitle: "One account\nBook other places\nRun your own",
+    loginRoleCustomer: "Customers & reviewers",
+    loginRoleCustomerDesc: "Browse, book, edit, cancel, and rate other restaurants.",
+    loginRoleOwner: "Restaurant owners",
+    loginRoleOwnerDesc: "Create a restaurant, set seats, opening hours, and cancellation windows.",
+    loginDemoTitle: "Test accounts (password: password123)",
+    loginDemoCustomer: "customer",
+    loginDemoOwner: "owner of 2 restaurants",
+  },
+} as const;

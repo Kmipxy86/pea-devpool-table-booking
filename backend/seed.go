@@ -7,6 +7,29 @@ import (
 	"time"
 )
 
+// keycloak_sub คงที่สำหรับบัญชีตัวอย่าง ต้องตรงกับ id ของ user ใน keycloak/tablebook-realm.json
+// เพื่อให้ login ผ่าน Keycloak แล้ว JIT-provision ไปจับคู่กับ user (และร้าน/รีวิว/การจอง) ที่ seed ไว้ตรงนี้ได้เลย
+const (
+	subCustomer = "00000000-0000-0000-0000-000000000001"
+	subOwner    = "00000000-0000-0000-0000-000000000002"
+	subOwner2   = "00000000-0000-0000-0000-000000000003"
+)
+
+var subReviewers = []string{
+	"00000000-0000-0000-0000-000000000004",
+	"00000000-0000-0000-0000-000000000005",
+	"00000000-0000-0000-0000-000000000006",
+	"00000000-0000-0000-0000-000000000007",
+	"00000000-0000-0000-0000-000000000008",
+	"00000000-0000-0000-0000-000000000009",
+	"00000000-0000-0000-0000-00000000000a",
+	"00000000-0000-0000-0000-00000000000b",
+	"00000000-0000-0000-0000-00000000000c",
+	"00000000-0000-0000-0000-00000000000d",
+	"00000000-0000-0000-0000-00000000000e",
+	"00000000-0000-0000-0000-00000000000f",
+}
+
 // seedIfEmpty ใส่ข้อมูลตัวอย่างเมื่อฐานข้อมูลยังว่าง (เปิดครั้งแรกก็เห็นร้านและการจองทันที)
 // การจองตัวอย่างอิงจาก "พรุ่งนี้" ตามเวลาไทย จึงไม่กลายเป็นอดีตไม่ว่าจะรันวันไหน
 func (a *App) seedIfEmpty(ctx context.Context) error {
@@ -19,32 +42,28 @@ func (a *App) seedIfEmpty(ctx context.Context) error {
 	}
 	log.Println("ฐานข้อมูลว่าง กำลังใส่ข้อมูลตัวอย่าง...")
 
-	pw, err := hashPassword("password123")
-	if err != nil {
-		return err
-	}
 	tx, err := a.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	addUser := func(email, name string) int64 {
+	addUser := func(sub, email, name string) int64 {
 		var id int64
 		if err == nil {
 			err = tx.QueryRowContext(ctx,
-				`INSERT INTO users (email, name, password_hash) VALUES ($1, $2, $3) RETURNING id`,
-				email, name, pw).Scan(&id)
+				`INSERT INTO users (keycloak_sub, email, name) VALUES ($1, $2, $3) RETURNING id`,
+				sub, email, name).Scan(&id)
 		}
 		return id
 	}
-	customer := addUser("customer@example.com", "สมชาย ใจดี")
-	owner := addUser("owner@example.com", "ป้าแดง")
-	owner2 := addUser("owner2@example.com", "เจ๊นก")
+	customer := addUser(subCustomer, "customer@example.com", "สมชาย ใจดี")
+	owner := addUser(subOwner, "owner@example.com", "ป้าแดง")
+	owner2 := addUser(subOwner2, "owner2@example.com", "เจ๊นก")
 	names := []string{"นภา", "ธีร์", "มายด์", "ก้อง", "แพร", "บอส", "ฝน", "ต้น", "เมย์", "โอ๊ต", "จูน", "ปั้น"}
 	reviewers := make([]int64, len(names))
 	for i, nm := range names {
-		reviewers[i] = addUser(fmt.Sprintf("reviewer%02d@example.com", i+1), nm)
+		reviewers[i] = addUser(subReviewers[i], fmt.Sprintf("reviewer%02d@example.com", i+1), nm)
 	}
 	if err != nil {
 		return err

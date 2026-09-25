@@ -1,4 +1,4 @@
-# ใช้รันฐานข้อมูล PostgreSQL อย่างเดียว: docker compose up -d
+# รัน PostgreSQL + Keycloak (auth): docker compose up -d
 services:
   db:
     image: postgres:16
@@ -11,5 +11,19 @@ services:
       - "5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
+  # Keycloak ใช้ storage ของตัวเอง (dev mode) แยกจาก Postgres ของแอป
+  # import realm ตัวอย่างอัตโนมัติจาก keycloak/tablebook-realm.json ตอนเริ่มครั้งแรก
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/tablebook-realm.json:/opt/keycloak/data/import/tablebook-realm.json:ro
+      - keycloak_data:/opt/keycloak/data
 volumes:
   dbdata:
+  keycloak_data:

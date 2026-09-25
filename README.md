@@ -19,17 +19,19 @@ UI Design: `<ใส่ลิงก์หรือโฟลเดอร์ภา�
 | Go | 1.22 ขึ้นไป |
 | Node.js | 20 ขึ้นไป |
 | PostgreSQL | 14 ขึ้นไป (หรือใช้ Docker รันให้) |
+| Docker | สำหรับรัน Keycloak (auth) |
 
 ## วิธีรัน (3 ขั้น)
 
-**1) เปิดฐานข้อมูล**
+**1) เปิดฐานข้อมูล + Keycloak**
 
 ```bash
 docker compose up -d
 ```
 
-ไม่มี Docker ก็ได้ ใช้ PostgreSQL ที่ติดตั้งในเครื่อง แล้วสร้าง user/database ชื่อ `tablebook` รหัส `tablebook`
-(หรือตั้ง `DATABASE_URL` เป็นของตัวเอง)
+รอสักครู่ให้ Keycloak import realm เสร็จ (เช็คได้ที่ http://localhost:8081 login ด้วย `admin` / `admin`)
+ไม่มี Docker ก็ได้สำหรับ PostgreSQL อย่างเดียว ใช้ที่ติดตั้งในเครื่อง แล้วสร้าง user/database ชื่อ `tablebook` รหัส `tablebook`
+(หรือตั้ง `DATABASE_URL` เป็นของตัวเอง) — แต่ Keycloak ยังต้องรันผ่าน Docker (หรือแยกติดตั้งเอง)
 
 **2) รัน Go backend** (terminal ที่ 1)
 
@@ -57,21 +59,23 @@ npm run dev
 | `DATABASE_URL` | `postgres://tablebook:tablebook@localhost:5432/tablebook?sslmode=disable` | backend |
 | `PORT` | `8080` | backend |
 | `UPLOAD_DIR` | `uploads` | backend (ที่เก็บรูป) |
-| `COOKIE_SECURE` | `false` | backend (ตั้ง `true` เมื่อใช้ HTTPS) |
+| `KEYCLOAK_ISSUER` | `http://localhost:8081/realms/tablebook` | backend, frontend |
+| `KEYCLOAK_CLIENT_ID` | `tablebook-web` | backend, frontend |
+| `COOKIE_SECURE` | `false` | frontend (ตั้ง `true` เมื่อใช้ HTTPS) |
 | `BACKEND_URL` | `http://localhost:8080` | frontend |
 
 ### เริ่มข้อมูลใหม่ทั้งหมด
 
 ```bash
-docker compose down -v      # ลบฐานข้อมูล
-docker compose up -d        # เปิดใหม่ แล้วรัน go run . อีกครั้ง ข้อมูลตัวอย่างจะถูกใส่ใหม่
+docker compose down -v      # ลบทั้งฐานข้อมูลและ Keycloak realm/users
+docker compose up -d        # เปิดใหม่ แล้วรัน go run . อีกครั้ง ข้อมูลตัวอย่างจะถูกใส่ใหม่ (schema.sql เปลี่ยนคอลัมน์ users ไม่รองรับ auto-migrate จาก DB เก่า จึงต้อง -v ทุกครั้งที่เปลี่ยน schema)
 ```
 
 ---
 
 ## บัญชีทดสอบ
 
-รหัสผ่านทุกบัญชี: **`password123`**
+รหัสผ่านทุกบัญชี: **`password123`** (login ผ่าน Keycloak — บัญชีเหล่านี้ถูก import ไว้แล้วใน `keycloak/tablebook-realm.json`)
 
 | อีเมล | ชื่อ | บทบาทในข้อมูลตัวอย่าง |
 |---|---|---|
@@ -98,7 +102,7 @@ docker compose up -d        # เปิดใหม่ แล้วรัน go 
 ## ฟีเจอร์
 
 **บังคับตามโจทย์**
-- สมัคร / เข้าสู่ระบบ / ออกจากระบบ
+- สมัคร / เข้าสู่ระบบ / ออกจากระบบ (ผ่าน Keycloak, OIDC)
 - สร้างร้าน (ชื่อ รายละเอียด รูปอย่างน้อย 1 รูป จำนวนที่นั่ง เวลาเปิด–ปิด) แก้ไขและลบได้เฉพาะร้านตัวเอง (ตรวจที่ API ตอบ 403)
 - จองโต๊ะ ตรวจเวลาเปิดร้าน เวลาที่ผ่านไปแล้ว และที่นั่ง ณ ทุกช่วงเวลา
 - หน้า "การจองของฉัน" แก้ไข (ไม่นับที่นั่งเดิมของตัวเองซ้ำ) และยกเลิกตามเวลาที่ร้านกำหนด
@@ -122,10 +126,10 @@ docker compose up -d        # เปิดใหม่ แล้วรัน go 
 | Frontend | Next.js 15 (App Router) + TypeScript, CSS ธรรมดา | โจทย์กำหนด Next.js / ใช้ Server Component ดึงข้อมูลตั้งแต่ฝั่ง server / ไม่ใช้ UI library เพื่อให้อธิบายได้ทุกบรรทัด |
 | Backend | Go 1.22 standard library (`net/http`) | Go 1.22 รองรับ `GET /api/restaurants/{id}` ใน router มาตรฐานแล้ว ไม่ต้องใช้ framework |
 | Database | PostgreSQL + `github.com/lib/pq` | มี transaction และ `SELECT ... FOR UPDATE` สำหรับกันการจองชนกัน, มี `TIMESTAMPTZ` สำหรับเวลา |
-| Login | session token แบบสุ่ม เก็บใน cookie `HttpOnly` | ยกเลิก session ได้ทันที (ลบแถวใน DB) และ JavaScript อ่าน cookie ไม่ได้ |
-| รหัสผ่าน | PBKDF2-HMAC-SHA256 120,000 รอบ + salt สุ่ม | เขียนด้วย standard library ไม่ต้องพึ่ง package นอก |
+| Login | Keycloak (OIDC, Authorization Code + PKCE) | ไม่เก็บรหัสผ่านเอง, ได้ hosted login page, token เป็น JWT ตรวจได้แบบไม่ต้อง query DB ทุกครั้ง |
+| ตรวจ token | `github.com/coreos/go-oidc/v3` + `golang.org/x/oauth2` | JWT/JWKS verification เป็นจุดเสี่ยงด้าน security สูง ใช้ไลบรารีมาตรฐานแทนเขียนเอง |
 
-dependency ภายนอกของ Go มีตัวเดียวคือ `lib/pq`
+dependency ภายนอกของ Go: `lib/pq`, `coreos/go-oidc/v3`, `golang.org/x/oauth2`
 
 ## โครงสร้างโปรเจกต์
 
@@ -138,15 +142,18 @@ backend/
   bookings.go      API การจอง + transaction + ดูความว่าง
   restaurants.go   API ร้าน + ตรวจสิทธิ์เจ้าของ + การเรียงคะแนน
   reviews.go       API รีวิว + อัปโหลดรูป
-  auth.go          สมัคร / login / session / hash รหัสผ่าน
+  auth.go          ตรวจ access token ของ Keycloak + JIT-provision user
   httpx.go         ตัวช่วยตอบ JSON และ error
   seed.go          ข้อมูลตัวอย่าง
   uploads/seed/    รูปร้านตัวอย่าง
 frontend/
   app/             หน้าเว็บ (1 โฟลเดอร์ = 1 URL)
+  app/api/auth/    login / callback / logout — คุยกับ Keycloak โดยตรง (Route Handler)
   components/      ส่วนประกอบ ("use client" = Client Component)
-  lib/             เรียก API, type, จัดรูปแบบวันเวลา
-docker-compose.yml PostgreSQL สำหรับพัฒนา
+  lib/             เรียก API, type, จัดรูปแบบวันเวลา, session/token helper
+  middleware.ts     แปลง cookie session เป็น Authorization header ก่อน proxy ไป Go
+keycloak/tablebook-realm.json  realm + client + demo users สำหรับ import อัตโนมัติ
+docker-compose.yml PostgreSQL + Keycloak สำหรับพัฒนา
 ```
 
 ## หน้าเว็บ
@@ -154,7 +161,7 @@ docker-compose.yml PostgreSQL สำหรับพัฒนา
 | URL | หน้า | ชนิด |
 |---|---|---|
 | `/` | รายการร้าน ค้นหา เรียงลำดับ | Server Component |
-| `/login`, `/register` | เข้าสู่ระบบ / สมัคร | ฟอร์มเป็น Client Component |
+| `/login` | เข้าสู่ระบบ (พาไปหน้า login ของ Keycloak) | Server Component |
 | `/restaurants/[id]` | รายละเอียดร้าน จอง รีวิว | Server + BookingPanel / ReviewForm เป็น Client |
 | `/bookings` | การจองของฉัน (กำลังจะถึง / ผ่านไปแล้ว / ยกเลิก) | Server + ปุ่มยกเลิกเป็น Client |
 | `/bookings/[id]/edit` | แก้ไขการจอง | ใช้ BookingPanel ตัวเดียวกับจองใหม่ |
@@ -166,12 +173,11 @@ docker-compose.yml PostgreSQL สำหรับพัฒนา
 
 ทุก endpoint ขึ้นต้นด้วย `/api` ตอบเป็น JSON ถ้าผิดพลาดตอบ `{"error": "ข้อความ"}`
 
+login/logout ทำที่ Next.js (`/api/auth/login`, `/api/auth/callback`, `/api/auth/logout` — คุยกับ Keycloak โดยตรง ไม่ผ่าน Go)
+
 | Method | Path | ต้อง login | หมายเหตุ |
 |---|---|---|---|
-| POST | `/auth/register` | | 201, 400 ข้อมูลไม่ครบ, 409 อีเมลซ้ำ |
-| POST | `/auth/login` | | 200, 401 อีเมลหรือรหัสผ่านผิด |
-| POST | `/auth/logout` | | 204 |
-| GET | `/auth/me` | ✓ | 200, 401 |
+| GET | `/auth/me` | ✓ | 200, 401 — ต้องแนบ `Authorization: Bearer <access token>` |
 | GET | `/restaurants?sort=rated\|reviews&q=` | | รายการร้าน |
 | POST | `/restaurants` | ✓ | 201 สร้างร้าน |
 | GET | `/restaurants/{id}` | | รายละเอียด + รีวิว |
@@ -242,13 +248,15 @@ score = (ผลรวมคะแนนของร้าน + m × ค่าเ
 หน้า list อ่านเร็วไม่ต้อง `AVG()` ทุกครั้ง ค่าเฉลี่ย = sum / count คำนวณตอนแสดง
 เก็บผลรวมแทนค่าเฉลี่ย เพื่อให้ตอนแก้รีวิวอัปเดตได้ถูกต้อง (`sum + ใหม่ − เก่า`) ไม่มีปัญหาปัดเศษสะสม
 
-### 7. Login และการเก็บ session
+### 7. Login และการเก็บ session (Keycloak)
 
-- Go สร้าง token สุ่ม 32 byte ส่งกลับเป็น cookie `tb_session` แบบ `HttpOnly` + `SameSite=Lax` (+ `Secure` เมื่อใช้ HTTPS)
-- DB เก็บเฉพาะ SHA-256 ของ token ถ้า DB หลุดก็เอาไปใช้ login ไม่ได้ อายุ 7 วัน logout = ลบแถวทิ้ง
-- Next.js ตั้ง rewrites ให้ `/api/*` และ `/uploads/*` ส่งต่อไป Go → browser เห็นเป็นเว็บเดียวกัน cookie ใช้ได้เลยไม่ต้องตั้ง CORS
-- Server Component ส่ง cookie ต่อให้ Go เอง (`lib/server-api.ts`)
-- หน้าเว็บแค่ "ซ่อน" สิ่งที่ทำไม่ได้ สิทธิ์จริงตรวจที่ Go ทุกครั้ง
+- Next.js ทำหน้าที่เป็น BFF (Backend-for-Frontend): คุยกับ Keycloak เองผ่าน Authorization Code flow + PKCE (`app/api/auth/{login,callback,logout}`)
+  Go backend ไม่เคยเห็นรหัสผ่านหรือคุยกับ Keycloak โดยตรงเลย
+- Token (access/refresh/เวลาหมดอายุ) เก็บใน cookie `HttpOnly` ฝั่ง Next.js (`tb_at`/`tb_rt`/`tb_exp`, ดู `frontend/lib/session.ts`) — browser และ JavaScript ฝั่งหน้าเว็บไม่เห็น token เลย
+- `frontend/middleware.ts` แปลง cookie เป็น `Authorization: Bearer <access token>` header ให้ทุกคำขอ `/api/*` ก่อนถูก rewrite ไป Go (Next.js ตั้ง rewrites ให้ `/api/*` และ `/uploads/*` ส่งต่อไป Go เหมือนเดิม จึงยัง same-origin ไม่ต้องตั้ง CORS) พร้อม refresh access token ให้อัตโนมัติเมื่อใกล้หมดอายุ
+- Server Component เรียก Go ตรง (ไม่ผ่าน middleware) จึงอ่าน/refresh token เองผ่าน helper เดียวกันใน `lib/server-api.ts`
+- Go backend ตรวจลายเซ็น JWT ด้วย JWKS ของ Keycloak (`github.com/coreos/go-oidc/v3`) แล้ว JIT-provision (สร้างอัตโนมัติตอน login ครั้งแรก) แถวใน `users` โดยผูกกับ `keycloak_sub` — ไม่มี session table หรือรหัสผ่านเก็บในระบบนี้อีกต่อไป
+- หน้าเว็บแค่ "ซ่อน" สิ่งที่ทำไม่ได้ สิทธิ์จริงตรวจที่ Go ทุกครั้ง (ตรวจจาก token ไม่ใช่จาก UI)
 
 ### 8. Server Component กับ Client Component
 
@@ -271,4 +279,4 @@ cd backend
 go test ./...
 ```
 
-ทดสอบ: ตัวอย่างสไลด์ 7 ทั้งสองกรณี, การแก้ไขไม่นับซ้ำ (สไลด์ 8), ร้านข้ามเที่ยงคืน, วันหยุด, เส้นตายยกเลิก, การ hash รหัสผ่าน
+ทดสอบ: ตัวอย่างสไลด์ 7 ทั้งสองกรณี, การแก้ไขไม่นับซ้ำ (สไลด์ 8), ร้านข้ามเที่ยงคืน, วันหยุด, เส้นตายยกเลิก

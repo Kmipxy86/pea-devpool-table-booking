@@ -11,6 +11,7 @@ import (
 	"time"
 	_ "time/tzdata" // ฝังข้อมูล timezone ในไฟล์โปรแกรม ใช้ได้แม้เครื่อง Windows ไม่มี tzdata
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	_ "github.com/lib/pq"
 )
 
@@ -19,16 +20,18 @@ var schemaSQL string
 
 // App เก็บของที่ handler ทุกตัวใช้ร่วมกัน
 type App struct {
-	db           *sql.DB
-	loc          *time.Location // Asia/Bangkok
-	uploadDir    string
-	secureCookie bool
-	now          func() time.Time // แยกไว้เพื่อให้ test กำหนดเวลาเองได้
+	db        *sql.DB
+	loc       *time.Location // Asia/Bangkok
+	uploadDir string
+	verifier  *oidc.IDTokenVerifier // ตรวจ access token ที่ Keycloak ออกให้
+	now       func() time.Time      // แยกไว้เพื่อให้ test กำหนดเวลาเองได้
 }
 
 func main() {
 	dsn := env("DATABASE_URL", "postgres://tablebook:tablebook@localhost:5432/tablebook?sslmode=disable")
 	port := env("PORT", "8080")
+	issuer := env("KEYCLOAK_ISSUER", "http://localhost:8081/realms/tablebook")
+	clientID := env("KEYCLOAK_CLIENT_ID", "tablebook-web")
 
 	loc, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
@@ -46,12 +49,17 @@ func main() {
 		log.Fatalf("migrate: %v", err)
 	}
 
+	verifier, err := waitForVerifier(issuer, clientID)
+	if err != nil {
+		log.Fatalf("connect keycloak: %v", err)
+	}
+
 	app := &App{
-		db:           db,
-		loc:          loc,
-		uploadDir:    env("UPLOAD_DIR", "uploads"),
-		secureCookie: os.Getenv("COOKIE_SECURE") == "true",
-		now:          time.Now,
+		db:        db,
+		loc:       loc,
+		uploadDir: env("UPLOAD_DIR", "uploads"),
+		verifier:  verifier,
+		now:       time.Now,
 	}
 	if err := os.MkdirAll(app.uploadDir, 0o755); err != nil {
 		log.Fatalf("upload dir: %v", err)
@@ -76,10 +84,7 @@ func (a *App) routes() http.Handler {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	// บัญชีผู้ใช้
-	mux.HandleFunc("POST /api/auth/register", a.handleRegister)
-	mux.HandleFunc("POST /api/auth/login", a.handleLogin)
-	mux.HandleFunc("POST /api/auth/logout", a.handleLogout)
+	// บัญชีผู้ใช้ (ยืนยันตัวตนผ่าน Keycloak แล้ว ส่ง access token มาใน Authorization: Bearer)
 	mux.HandleFunc("GET /api/auth/me", a.requireUser(a.handleMe))
 
 	// ร้าน
@@ -117,6 +122,20 @@ func waitForDB(db *sql.DB) error {
 		time.Sleep(2 * time.Second)
 	}
 	return fmt.Errorf("database not reachable: %w", err)
+}
+
+// waitForVerifier รอ Keycloak เปิด discovery endpoint (oidc.NewProvider ล้มเหลวทันทีถ้า issuer ยังไม่ตอบ)
+func waitForVerifier(issuer, clientID string) (*oidc.IDTokenVerifier, error) {
+	var err error
+	for i := 0; i < 15; i++ {
+		var v *oidc.IDTokenVerifier
+		if v, err = newVerifier(context.Background(), issuer, clientID); err == nil {
+			return v, nil
+		}
+		log.Printf("รอ Keycloak... (%v)", err)
+		time.Sleep(2 * time.Second)
+	}
+	return nil, fmt.Errorf("keycloak not reachable: %w", err)
 }
 
 func env(key, fallback string) string {

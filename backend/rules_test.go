@@ -112,13 +112,3 @@ func TestCanModify(t *testing.T) {
 		t.Fatal("ร้านตั้ง 2 ชม. 10:30 ต้องยกเลิกไม่ได้")
 	}
 }
-
-func TestPassword(t *testing.T) {
-	h, err := hashPassword("password123")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !checkPassword("password123", h) || checkPassword("wrong", h) {
-		t.Fatal("ตรวจรหัสผ่านผิด")
-	}
-}

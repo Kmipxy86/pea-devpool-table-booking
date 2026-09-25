@@ -24,6 +24,17 @@ services:
     volumes:
       - ./keycloak/tablebook-realm.json:/opt/keycloak/data/import/tablebook-realm.json:ro
       - keycloak_data:/opt/keycloak/data
+  # ตั้งรหัสผ่านบัญชีทดสอบผ่าน Admin REST API หลัง Keycloak พร้อม (รันครั้งเดียวแล้วออก)
+  # แยกจาก tablebook-realm.json เพื่อไม่ให้มีรหัสผ่าน plaintext อยู่ในไฟล์ realm export ที่ commit ลง git
+  keycloak-seed:
+    image: curlimages/curl:8.11.0
+    depends_on:
+      - keycloak
+    volumes:
+      - ./keycloak/seed-passwords.sh:/seed-passwords.sh:ro
+    environment:
+      SEED_PASSWORD: password123
+    entrypoint: ["sh", "/seed-passwords.sh"]
 volumes:
   dbdata:
   keycloak_data:

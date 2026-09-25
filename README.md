@@ -75,7 +75,7 @@ docker compose up -d        # เปิดใหม่ แล้วรัน go 
 
 ## บัญชีทดสอบ
 
-รหัสผ่านทุกบัญชี: **`password123`** (login ผ่าน Keycloak — บัญชีเหล่านี้ถูก import ไว้แล้วใน `keycloak/tablebook-realm.json`)
+รหัสผ่านทุกบัญชี: **`password123`** — บัญชีเหล่านี้ถูก import ไว้แล้วใน `keycloak/tablebook-realm.json` (ไม่มีรหัสผ่านอยู่ในไฟล์นี้) แล้ว `docker compose up` จะรัน `keycloak/seed-passwords.sh` ตั้งรหัสผ่านให้อัตโนมัติผ่าน Keycloak Admin REST API
 
 | อีเมล | ชื่อ | บทบาทในข้อมูลตัวอย่าง |
 |---|---|---|

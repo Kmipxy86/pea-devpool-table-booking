@@ -24,8 +24,12 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["http://localhost:3000/api/auth/callback"],
-      "webOrigins": ["http://localhost:3000"],
+      "redirectUris": [
+        "http://localhost:3000/api/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3000"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:3000/*"
@@ -52,8 +56,7 @@
       "email": "customer@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "สมชาย ใจดี",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "สมชาย ใจดี"
     },
     {
       "id": "00000000-0000-0000-0000-000000000002",
@@ -61,8 +64,7 @@
       "email": "owner@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "ป้าแดง",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "ป้าแดง"
     },
     {
       "id": "00000000-0000-0000-0000-000000000003",
@@ -70,8 +72,7 @@
       "email": "owner2@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "เจ๊นก",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "เจ๊นก"
     },
     {
       "id": "00000000-0000-0000-0000-000000000004",
@@ -79,8 +80,7 @@
       "email": "reviewer01@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "นภา",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "นภา"
     },
     {
       "id": "00000000-0000-0000-0000-000000000005",
@@ -88,8 +88,7 @@
       "email": "reviewer02@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "ธีร์",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "ธีร์"
     },
     {
       "id": "00000000-0000-0000-0000-000000000006",
@@ -97,8 +96,7 @@
       "email": "reviewer03@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "มายด์",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "มายด์"
     },
     {
       "id": "00000000-0000-0000-0000-000000000007",
@@ -106,8 +104,7 @@
       "email": "reviewer04@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "ก้อง",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "ก้อง"
     },
     {
       "id": "00000000-0000-0000-0000-000000000008",
@@ -115,8 +112,7 @@
       "email": "reviewer05@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "แพร",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "แพร"
     },
     {
       "id": "00000000-0000-0000-0000-000000000009",
@@ -124,8 +120,7 @@
       "email": "reviewer06@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "บอส",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "บอส"
     },
     {
       "id": "00000000-0000-0000-0000-00000000000a",
@@ -133,8 +128,7 @@
       "email": "reviewer07@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "ฝน",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "ฝน"
     },
     {
       "id": "00000000-0000-0000-0000-00000000000b",
@@ -142,8 +136,7 @@
       "email": "reviewer08@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "ต้น",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "ต้น"
     },
     {
       "id": "00000000-0000-0000-0000-00000000000c",
@@ -151,8 +144,7 @@
       "email": "reviewer09@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "เมย์",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "เมย์"
     },
     {
       "id": "00000000-0000-0000-0000-00000000000d",
@@ -160,8 +152,7 @@
       "email": "reviewer10@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "โอ๊ต",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "โอ๊ต"
     },
     {
       "id": "00000000-0000-0000-0000-00000000000e",
@@ -169,8 +160,7 @@
       "email": "reviewer11@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "จูน",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "จูน"
     },
     {
       "id": "00000000-0000-0000-0000-00000000000f",
@@ -178,8 +168,7 @@
       "email": "reviewer12@example.com",
       "emailVerified": true,
       "enabled": true,
-      "firstName": "ปั้น",
-      "credentials": [{ "type": "password", "value": "password123", "temporary": false }]
+      "firstName": "ปั้น"
     }
   ]
 }

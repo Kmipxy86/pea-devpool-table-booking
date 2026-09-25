@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { safeNext } from "@/lib/format";
 import { getLocale } from "@/lib/locale";
 import { t } from "@/lib/i18n";
@@ -25,10 +24,12 @@ export default async function LoginPage({ searchParams }: Props) {
             <h2 style={{ fontSize: 28 }}>{s.loginTitle}</h2>
             <p className="muted small">{s.loginSubtitle}</p>
           </div>
-          <Link href={`/api/auth/login${nextQs}`} className="btn btn-primary btn-lg">{s.loginCta}</Link>
+          {/* <a> ธรรมดา ไม่ใช่ next/link — Link จะพยายาม fetch RSC payload จาก route นี้ก่อน (ซึ่งเป็น
+              redirect ไม่ใช่หน้า) แล้วค่อย fallback ไป browser navigation ทำให้กดแล้วบางทีไม่ตอบสนอง */}
+          <a href={`/api/auth/login${nextQs}`} className="btn btn-primary btn-lg">{s.loginCta}</a>
           <div className="row small muted" style={{ justifyContent: "center", gap: 8 }}>
             <span>{s.orDivider}</span>
-            <Link href={`/api/auth/register${nextQs}`}>{s.registerCta}</Link>
+            <a href={`/api/auth/register${nextQs}`}>{s.registerCta}</a>
           </div>
           <div className="alert alert-info" style={{ flexDirection: "column", gap: 2 }}>
             <b>{s.loginDemoTitle}</b>

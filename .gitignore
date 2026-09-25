@@ -1,0 +1,26 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Go
+backend/tablebook
+backend/tablebook.exe
+*.test
+
+# รูปที่ผู้ใช้อัปโหลด (เก็บเฉพาะรูปตัวอย่างใน seed/)
+backend/uploads/*
+!backend/uploads/seed/
+
+# ค่าลับ / ค่าเฉพาะเครื่อง
+.env
+.env.local
+.env*.local
+
+# อื่น ๆ
+.DS_Store
+*.log
+.vscode/
+.idea/

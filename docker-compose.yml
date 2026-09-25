@@ -1,0 +1,15 @@
+# ใช้รันฐานข้อมูล PostgreSQL อย่างเดียว: docker compose up -d
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tablebook
+      POSTGRES_PASSWORD: tablebook
+      POSTGRES_DB: tablebook
+      TZ: Asia/Bangkok
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+volumes:
+  dbdata:

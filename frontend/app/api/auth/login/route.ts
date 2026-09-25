@@ -17,6 +17,9 @@ export async function GET(req: NextRequest) {
   url.searchParams.set("state", state);
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "S256");
+  // บังคับให้ Keycloak โชว์ฟอร์ม login ทุกครั้ง แม้จะมี SSO session ค้างจากบัญชีก่อนหน้า
+  // (จำเป็นสำหรับสลับบัญชีทดสอบ — ปกติ Keycloak จะ auto-login ด้วย session เดิมโดยไม่ถามซ้ำ)
+  url.searchParams.set("prompt", "login");
 
   const res = NextResponse.redirect(url);
   res.cookies.set(COOKIE.pkce, JSON.stringify({ verifier, state, next }), cookieOpts(300));

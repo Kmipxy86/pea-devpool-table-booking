@@ -17,7 +17,7 @@ export default function RestaurantCard({ r, locale }: { r: Restaurant; locale: L
       <div className="r-body">
         <div className="between">
           <span className="r-name">{r.name}</span>
-          <Rating value={r.rating} count={r.review_count} />
+          <Rating value={r.rating} count={r.review_count} locale={locale} />
         </div>
         <span className="small muted">{[r.cuisine, r.location].filter(Boolean).join(" · ")}</span>
         <div className="r-meta">

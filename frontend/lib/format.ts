@@ -28,13 +28,22 @@ export function toMinutes(hm: string): number {
   return h * 60 + m;
 }
 
-export function cancelLabel(minutes: number): string {
+export function cancelLabel(minutes: number, locale: "th" | "en" = "th"): string {
+  if (locale === "en") {
+    if (minutes % 1440 === 0) { const d = minutes / 1440; return `${d} day${d === 1 ? "" : "s"}`; }
+    if (minutes % 60 === 0) { const h = minutes / 60; return `${h} hour${h === 1 ? "" : "s"}`; }
+    return `${minutes} minutes`;
+  }
   if (minutes % 1440 === 0) return `${minutes / 1440} วัน`;
   if (minutes % 60 === 0) return `${minutes / 60} ชั่วโมง`;
   return `${minutes} นาที`;
 }
 
 export const WEEKDAYS = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัสบดี", "ศุกร์", "เสาร์"];
+const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export function weekdayLabel(i: number, locale: "th" | "en" = "th"): string {
+  return (locale === "en" ? WEEKDAYS_EN : WEEKDAYS)[i];
+}
 
 // รับเฉพาะ path ภายในเว็บเรา กันการพาไปเว็บอื่น (open redirect)
 export function safeNext(next?: string): string {

@@ -5,18 +5,19 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/client-api";
 import type { RestaurantDetail } from "@/lib/types";
-import { toMinutes, WEEKDAYS } from "@/lib/format";
+import { toMinutes, weekdayLabel } from "@/lib/format";
+import { t, type Locale } from "@/lib/i18n";
 
-const CANCEL_OPTIONS = [
-  { v: 30, label: "30 นาที (ค่าเริ่มต้น)" },
-  { v: 60, label: "1 ชั่วโมง" },
-  { v: 120, label: "2 ชั่วโมง" },
-  { v: 180, label: "3 ชั่วโมง" },
-  { v: 1440, label: "1 วัน" },
-];
-
-export default function RestaurantForm({ initial }: { initial?: RestaurantDetail }) {
+export default function RestaurantForm({ initial, locale }: { initial?: RestaurantDetail; locale: Locale }) {
   const router = useRouter();
+  const s = t[locale];
+  const CANCEL_OPTIONS = [
+    { v: 30, label: s.cancelOption30 },
+    { v: 60, label: s.cancelOption60 },
+    { v: 120, label: s.cancelOption120 },
+    { v: 180, label: s.cancelOption180 },
+    { v: 1440, label: s.cancelOption1440 },
+  ];
   const [name, setName] = useState(initial?.name ?? "");
   const [cuisine, setCuisine] = useState(initial?.cuisine ?? "");
   const [location, setLocation] = useState(initial?.location ?? "");
@@ -35,7 +36,7 @@ export default function RestaurantForm({ initial }: { initial?: RestaurantDetail
   const overnight = open && close && toMinutes(close) <= toMinutes(open);
   const cancelOptions = CANCEL_OPTIONS.some((o) => o.v === cancelMinutes)
     ? CANCEL_OPTIONS
-    : [...CANCEL_OPTIONS, { v: cancelMinutes, label: `${cancelMinutes} นาที` }];
+    : [...CANCEL_OPTIONS, { v: cancelMinutes, label: s.cancelOptionCustom(cancelMinutes) }];
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -51,7 +52,7 @@ export default function RestaurantForm({ initial }: { initial?: RestaurantDetail
         setImages((prev) => [...prev, url]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "อัปโหลดไม่สำเร็จ");
+      setError(err instanceof Error ? err.message : s.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -63,7 +64,7 @@ export default function RestaurantForm({ initial }: { initial?: RestaurantDetail
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (images.length === 0) { setError("ต้องมีรูปร้านอย่างน้อย 1 รูป"); return; }
+    if (images.length === 0) { setError(s.needOnePhoto); return; }
     setSaving(true);
     setError("");
     const body = JSON.stringify({
@@ -77,7 +78,7 @@ export default function RestaurantForm({ initial }: { initial?: RestaurantDetail
       router.push(`/owner/${saved.id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "บันทึกไม่สำเร็จ");
+      setError(err instanceof Error ? err.message : s.saveFailed);
       setSaving(false);
     }
   }
@@ -85,41 +86,41 @@ export default function RestaurantForm({ initial }: { initial?: RestaurantDetail
   return (
     <form onSubmit={onSubmit} className="stack-lg">
       <section className="card stack">
-        <h2 style={{ fontSize: 19 }}>ข้อมูลร้าน</h2>
-        <label className="field">ชื่อร้าน
+        <h2 style={{ fontSize: 19 }}>{s.restaurantInfoTitle}</h2>
+        <label className="field">{s.nameLabel}
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
         </label>
         <div className="grid-2">
-          <label className="field">ประเภทอาหาร
-            <input className="input" value={cuisine} onChange={(e) => setCuisine(e.target.value)} placeholder="เช่น อาหารไทย ก๋วยเตี๋ยว" />
+          <label className="field">{s.cuisineLabel}
+            <input className="input" value={cuisine} onChange={(e) => setCuisine(e.target.value)} placeholder={s.cuisinePlaceholder} />
           </label>
-          <label className="field">ที่ตั้ง / ย่าน
-            <input className="input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="เช่น สามย่าน" />
+          <label className="field">{s.locationLabel}
+            <input className="input" value={location} onChange={(e) => setLocation(e.target.value)} placeholder={s.locationPlaceholder} />
           </label>
         </div>
-        <label className="field">รายละเอียด
-          <textarea className="textarea" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="สิ่งที่ลูกค้าควรรู้ เช่น เมนูเด่น ที่จอดรถ" />
+        <label className="field">{s.descriptionLabel}
+          <textarea className="textarea" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder={s.descriptionPlaceholder} />
         </label>
       </section>
 
       <section className="card stack">
-        <div className="between"><h2 style={{ fontSize: 19 }}>รูปร้าน</h2><span className="xs muted">อย่างน้อย 1 รูป · รูปแรกคือรูปหลัก · JPG/PNG/WEBP ไม่เกิน 5 MB</span></div>
+        <div className="between"><h2 style={{ fontSize: 19 }}>{s.photosTitle}</h2><span className="xs muted">{s.photosHint}</span></div>
         <div className="img-grid">
           {images.map((src, i) => (
             <div key={src} className="img-tile">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt={`รูปที่ ${i + 1}`} />
-              {i === 0 && <span className="badge badge-dark">รูปหลัก</span>}
+              {i === 0 && <span className="badge badge-dark">{s.mainPhoto}</span>}
               <div className="tile-actions">
-                {i > 0 && <button type="button" onClick={() => setImages((p) => [src, ...p.filter((x) => x !== src)])}>ตั้งเป็นรูปหลัก</button>}
-                <button type="button" onClick={() => setImages((p) => p.filter((x) => x !== src))} aria-label={`ลบรูปที่ ${i + 1}`}>ลบ</button>
+                {i > 0 && <button type="button" onClick={() => setImages((p) => [src, ...p.filter((x) => x !== src)])}>{s.setAsMain}</button>}
+                <button type="button" onClick={() => setImages((p) => p.filter((x) => x !== src))} aria-label={s.deletePhotoAria(i + 1)}>{s.deleteBtn}</button>
               </div>
             </div>
           ))}
           {images.length < 10 && (
             <label className="upload-tile">
               <span style={{ fontSize: 24, color: "var(--orange-700)" }}>+</span>
-              {uploading ? "กำลังอัปโหลด..." : "เพิ่มรูป"}
+              {uploading ? s.uploading : s.addPhoto}
               <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={onUpload} disabled={uploading} style={{ display: "none" }} />
             </label>
           )}
@@ -127,42 +128,42 @@ export default function RestaurantForm({ initial }: { initial?: RestaurantDetail
       </section>
 
       <section className="card stack">
-        <h2 style={{ fontSize: 19 }}>ที่นั่งและการจอง</h2>
+        <h2 style={{ fontSize: 19 }}>{s.seatingTitle}</h2>
         <div className="grid-3">
-          <label className="field">จำนวนที่นั่ง
+          <label className="field">{s.seatsCountLabel}
             <input className="input" type="number" min={1} max={1000} value={seats} onChange={(e) => setSeats(e.target.value)} required />
-            <span className="hint">นับเป็นที่นั่ง ไม่แยกโต๊ะ</span>
+            <span className="hint">{s.seatsHint}</span>
           </label>
-          <label className="field">ยกเลิกล่วงหน้า
+          <label className="field">{s.cancelAdvanceLabel}
             <select className="select" value={cancelMinutes} onChange={(e) => setCancelMinutes(Number(e.target.value))}>
               {cancelOptions.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
             </select>
-            <span className="hint">ตั้งต่ำกว่า 30 นาทีไม่ได้</span>
+            <span className="hint">{s.cancelHint}</span>
           </label>
-          <label className="field">ป้าย Limited Seats
+          <label className="field">{s.limitedSeatsLabel}
             <select className="select" value={limitedPct} onChange={(e) => setLimitedPct(Number(e.target.value))}>
-              {[0, 10, 20, 30, 50].map((p) => <option key={p} value={p}>{p === 0 ? "ไม่แสดง" : `เหลือ ≤ ${p}%`}</option>)}
+              {[0, 10, 20, 30, 50].map((p) => <option key={p} value={p}>{p === 0 ? s.limitedNone : s.limitedPct(p)}</option>)}
             </select>
-            <span className="hint">ขึ้นป้ายเมื่อช่วงเวลาใกล้เต็ม</span>
+            <span className="hint">{s.limitedHint}</span>
           </label>
         </div>
       </section>
 
       <section className="card stack">
-        <div className="between"><h2 style={{ fontSize: 19 }}>เวลาเปิด–ปิด</h2><span className="xs muted">เวลาปิดน้อยกว่าเวลาเปิด = ปิดวันถัดไป</span></div>
+        <div className="between"><h2 style={{ fontSize: 19 }}>{s.hoursTitle}</h2><span className="xs muted">{s.hoursHint}</span></div>
         <div className="row">
-          <label className="field">เปิด<input className="input mono" type="time" value={open} onChange={(e) => setOpen(e.target.value)} required style={{ width: 140 }} /></label>
-          <label className="field">ปิด<input className="input mono" type="time" value={close} onChange={(e) => setClose(e.target.value)} required style={{ width: 140 }} /></label>
-          {overnight && <span className="badge badge-orange" style={{ alignSelf: "flex-end", marginBottom: 12 }}>ปิด +1 วัน (เปิดข้ามเที่ยงคืน)</span>}
+          <label className="field">{s.openLabel}<input className="input mono" type="time" value={open} onChange={(e) => setOpen(e.target.value)} required style={{ width: 140 }} /></label>
+          <label className="field">{s.closeLabel}<input className="input mono" type="time" value={close} onChange={(e) => setClose(e.target.value)} required style={{ width: 140 }} /></label>
+          {overnight && <span className="badge badge-orange" style={{ alignSelf: "flex-end", marginBottom: 12 }}>{s.overnightBadge}</span>}
         </div>
         <div className="stack" style={{ gap: 8 }}>
-          <span className="small" style={{ fontWeight: 600 }}>วันที่เปิด (เอาเครื่องหมายออก = วันหยุด)</span>
+          <span className="small" style={{ fontWeight: 600 }}>{s.openDaysLabel}</span>
           <div className="day-row">
-            {WEEKDAYS.map((d, i) => {
+            {Array.from({ length: 7 }, (_, i) => i).map((i) => {
               const isOpen = !closedDays.includes(i);
               return (
-                <label key={d} className={`day-check${isOpen ? "" : " off"}`}>
-                  <input type="checkbox" checked={isOpen} onChange={() => toggleDay(i)} />{d}
+                <label key={i} className={`day-check${isOpen ? "" : " off"}`}>
+                  <input type="checkbox" checked={isOpen} onChange={() => toggleDay(i)} />{weekdayLabel(i, locale)}
                 </label>
               );
             })}
@@ -172,8 +173,8 @@ export default function RestaurantForm({ initial }: { initial?: RestaurantDetail
 
       {error && <div className="alert alert-error" role="alert">{error}</div>}
       <div className="between">
-        <Link href={initial ? `/owner/${initial.id}` : "/owner"} className="btn btn-outline">ยกเลิก</Link>
-        <button type="submit" className="btn btn-primary" disabled={saving || uploading}>{saving ? "กำลังบันทึก..." : initial ? "บันทึกการแก้ไข" : "สร้างร้าน"}</button>
+        <Link href={initial ? `/owner/${initial.id}` : "/owner"} className="btn btn-outline">{s.formCancel}</Link>
+        <button type="submit" className="btn btn-primary" disabled={saving || uploading}>{saving ? s.saving : initial ? s.saveEdit : s.createRestaurantBtn}</button>
       </div>
     </form>
   );

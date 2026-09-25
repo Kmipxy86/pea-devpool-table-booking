@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { applyTokenSet, getValidAccessToken } from "@/lib/session";
 
 // เส้นทางที่ Next.js จัดการเอง (คุยกับ Keycloak โดยตรง) ไม่ต้องแนบ Authorization header
-const OWN_AUTH_ROUTES = new Set(["/api/auth/login", "/api/auth/callback", "/api/auth/logout"]);
+const OWN_AUTH_ROUTES = new Set(["/api/auth/login", "/api/auth/register", "/api/auth/callback", "/api/auth/logout"]);
 
 export async function middleware(req: NextRequest) {
   if (OWN_AUTH_ROUTES.has(req.nextUrl.pathname)) {

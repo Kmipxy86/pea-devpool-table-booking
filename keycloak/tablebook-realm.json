@@ -3,6 +3,9 @@
   "enabled": true,
   "sslRequired": "none",
   "accessTokenLifespan": 60,
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
   "components": {
     "org.keycloak.userprofile.UserProfileProvider": [
       {

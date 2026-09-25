@@ -13,6 +13,7 @@ const SESSION_MAXAGE = 60 * 60 * 24 * 7; // 7 วัน เหมือน tb_se
 const REFRESH_SKEW = 20; // วินาที: refresh ล่วงหน้าก่อนหมดอายุจริง กัน race ระหว่าง request
 
 export const authEndpoint = () => `${ISSUER}/protocol/openid-connect/auth`;
+export const registerEndpoint = () => `${ISSUER}/protocol/openid-connect/registrations`;
 export const tokenEndpoint = () => `${ISSUER}/protocol/openid-connect/token`;
 
 export function cookieOpts(maxAgeSeconds: number) {
@@ -99,4 +100,24 @@ export function randomToken(byteLen = 32): string {
 export async function pkceChallenge(verifier: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
   return base64url(digest);
+}
+
+// ใช้ร่วมกันโดย /api/auth/login และ /api/auth/register: สร้าง code_verifier + state
+// แล้วพาไปหน้า login หรือหน้าสมัครสมาชิกของ Keycloak (endpoint ต่างกัน แต่ callback เดียวกัน)
+export async function startPkceRedirect(endpoint: string, origin: string, next: string, extraParams: Record<string, string> = {}) {
+  const verifier = randomToken();
+  const state = randomToken(16);
+  const challenge = await pkceChallenge(verifier);
+
+  const url = new URL(endpoint);
+  url.searchParams.set("client_id", CLIENT_ID);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "openid");
+  url.searchParams.set("redirect_uri", `${origin}/api/auth/callback`);
+  url.searchParams.set("state", state);
+  url.searchParams.set("code_challenge", challenge);
+  url.searchParams.set("code_challenge_method", "S256");
+  for (const [k, v] of Object.entries(extraParams)) url.searchParams.set(k, v);
+
+  return { url, verifier, state };
 }

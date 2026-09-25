@@ -26,6 +26,10 @@ export default async function LoginPage({ searchParams }: Props) {
             <p className="muted small">{s.loginSubtitle}</p>
           </div>
           <Link href={`/api/auth/login${nextQs}`} className="btn btn-primary btn-lg">{s.loginCta}</Link>
+          <div className="row small muted" style={{ justifyContent: "center", gap: 8 }}>
+            <span>{s.orDivider}</span>
+            <Link href={`/api/auth/register${nextQs}`}>{s.registerCta}</Link>
+          </div>
           <div className="alert alert-info" style={{ flexDirection: "column", gap: 2 }}>
             <b>{s.loginDemoTitle}</b>
             <span className="mono xs">customer@example.com — {s.loginDemoCustomer}</span>

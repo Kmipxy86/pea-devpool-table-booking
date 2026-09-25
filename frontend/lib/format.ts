@@ -11,14 +11,14 @@ export function addDays(date: string, n: number): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(d);
 }
 
-export function thaiDate(date: string, opts: Intl.DateTimeFormatOptions = {}): string {
-  return new Intl.DateTimeFormat("th-TH", {
+export function thaiDate(date: string, opts: Intl.DateTimeFormatOptions = {}, locale: "th" | "en" = "th"): string {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "th-TH", {
     timeZone: TZ, weekday: "short", day: "numeric", month: "short", ...opts,
   }).format(new Date(date + "T12:00:00+07:00"));
 }
 
-export function thaiDateTime(iso: string): string {
-  return new Intl.DateTimeFormat("th-TH", {
+export function thaiDateTime(iso: string, locale: "th" | "en" = "th"): string {
+  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "th-TH", {
     timeZone: TZ, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
   }).format(new Date(iso));
 }

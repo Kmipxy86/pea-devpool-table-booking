@@ -2,6 +2,8 @@ import Link from "next/link";
 import { serverGet } from "@/lib/server-api";
 import type { Restaurant } from "@/lib/types";
 import RestaurantCard from "@/components/RestaurantCard";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 
 type Props = { searchParams: Promise<{ sort?: string; q?: string }> };
 
@@ -9,7 +11,11 @@ type Props = { searchParams: Promise<{ sort?: string; q?: string }> };
 export default async function HomePage({ searchParams }: Props) {
   const { sort = "rated", q = "" } = await searchParams;
   const qs = new URLSearchParams({ sort, q });
-  const list = (await serverGet<Restaurant[]>(`/api/restaurants?${qs}`)) ?? [];
+  const [list, locale] = await Promise.all([
+    serverGet<Restaurant[]>(`/api/restaurants?${qs}`).then((r) => r ?? []),
+    getLocale(),
+  ]);
+  const s = t[locale];
 
   const tab = (value: string, label: string) => (
     <Link
@@ -24,23 +30,23 @@ export default async function HomePage({ searchParams }: Props) {
   return (
     <main className="container">
       <section className="hero">
-        <span className="eyebrow">จองโต๊ะร้านอาหาร</span>
-        <h1>วันนี้อยากนั่งร้านไหน</h1>
-        <p className="muted">เลือกร้าน วัน เวลา และจำนวนคน ระบบจะบอกทันทีว่ายังมีที่ว่างไหม</p>
+        <span className="eyebrow">{s.homeEyebrow}</span>
+        <h1>{s.homeTitle}</h1>
+        <p className="muted">{s.homeSubtitle}</p>
         {/* ฟอร์มแบบ GET ธรรมดา: ส่งคำค้นผ่าน URL ไม่ต้องใช้ JavaScript */}
         <form className="search-bar" action="/" role="search">
           <input type="hidden" name="sort" value={sort} />
-          <input className="input" style={{ flex: 1 }} name="q" defaultValue={q} placeholder="ค้นหาชื่อร้าน ประเภทอาหาร หรือย่าน" aria-label="ค้นหาร้าน" />
-          <button className="btn btn-primary" type="submit">ค้นหา</button>
+          <input className="input" style={{ flex: 1 }} name="q" defaultValue={q} placeholder={s.searchPlaceholder} aria-label={s.searchAria} />
+          <button className="btn btn-primary" type="submit">{s.searchBtn}</button>
         </form>
       </section>
 
       <section className="page" style={{ paddingTop: 24 }}>
         <div className="between">
           <div className="stack" style={{ gap: 2 }}>
-            <h2>{q ? `ผลการค้นหา “${q}”` : "ร้านทั้งหมด"} <span className="small muted" style={{ fontFamily: "var(--font-body)", fontWeight: 400 }}>{list.length} ร้าน</span></h2>
+            <h2>{q ? s.searchResultsFor(q) : s.allRestaurants} <span className="small muted" style={{ fontFamily: "var(--font-body)", fontWeight: 400 }}>{s.restaurantsCount(list.length)}</span></h2>
             <span className="xs muted">
-              {sort === "reviews" ? "เรียงตามจำนวนรีวิวมากที่สุด" : "เรียงตามคะแนนเฉลี่ยที่ถ่วงด้วยจำนวนรีวิว ร้านที่รีวิวน้อยจะไม่แซงขึ้นมาง่าย ๆ"}
+              {sort === "reviews" ? s.sortByReviews : s.sortByRating}
             </span>
           </div>
           <div className="row">
@@ -49,10 +55,10 @@ export default async function HomePage({ searchParams }: Props) {
           </div>
         </div>
         {list.length === 0 ? (
-          <div className="card empty">ไม่พบร้านที่ตรงกับคำค้น</div>
+          <div className="card empty">{s.noResults}</div>
         ) : (
           <div className="restaurant-grid">
-            {list.map((r) => <RestaurantCard key={r.id} r={r} />)}
+            {list.map((r) => <RestaurantCard key={r.id} r={r} locale={locale} />)}
           </div>
         )}
       </section>

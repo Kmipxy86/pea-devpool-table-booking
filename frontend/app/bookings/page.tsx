@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getMe, serverGet } from "@/lib/server-api";
 import type { Booking } from "@/lib/types";
 import { thaiDate, thaiDateTime } from "@/lib/format";
+import { getLocale } from "@/lib/locale";
+import { t } from "@/lib/i18n";
 import CancelBookingButton from "@/components/CancelBookingButton";
 
 type Props = { searchParams: Promise<{ tab?: string }> };
@@ -11,7 +13,11 @@ export default async function MyBookingsPage({ searchParams }: Props) {
   const me = await getMe();
   if (!me) redirect("/login?next=/bookings");
   const { tab = "upcoming" } = await searchParams;
-  const all = (await serverGet<Booking[]>("/api/me/bookings")) ?? [];
+  const [all, locale] = await Promise.all([
+    serverGet<Booking[]>("/api/me/bookings").then((b) => b ?? []),
+    getLocale(),
+  ]);
+  const s = t[locale];
 
   const groups = {
     upcoming: all.filter((b) => b.status === "confirmed" && !b.is_past),
@@ -19,12 +25,12 @@ export default async function MyBookingsPage({ searchParams }: Props) {
     cancelled: all.filter((b) => b.status === "cancelled").reverse(),
   };
   const current = groups[tab as keyof typeof groups] ?? groups.upcoming;
-  const tabs: [keyof typeof groups, string][] = [["upcoming", "กำลังจะถึง"], ["past", "ผ่านไปแล้ว"], ["cancelled", "ยกเลิกแล้ว"]];
+  const tabs: [keyof typeof groups, string][] = [["upcoming", s.tabUpcoming], ["past", s.tabPast], ["cancelled", s.tabCancelled]];
 
   return (
     <main className="container page" style={{ maxWidth: 820 }}>
-      <h1>การจองของฉัน</h1>
-      <nav className="tabs" aria-label="กรองการจอง" style={{ alignSelf: "flex-start" }}>
+      <h1>{s.myBookingsTitle}</h1>
+      <nav className="tabs" aria-label={s.filterBookingsAria} style={{ alignSelf: "flex-start" }}>
         {tabs.map(([key, label]) => (
           <Link key={key} href={`/bookings?tab=${key}`} className={`tab${tab === key ? " active" : ""}`}>
             {label} · {groups[key].length}
@@ -34,7 +40,7 @@ export default async function MyBookingsPage({ searchParams }: Props) {
 
       {current.length === 0 && (
         <div className="card empty">
-          ยังไม่มีรายการ <Link href="/">ไปหาร้านเพื่อจอง</Link>
+          {s.noBookings} <Link href="/">{s.goFindRestaurant}</Link>
         </div>
       )}
 
@@ -43,9 +49,9 @@ export default async function MyBookingsPage({ searchParams }: Props) {
         return (
           <article key={b.id} className="booking-card">
             <div className={`booking-date${b.status === "confirmed" && !b.is_past ? "" : " muted-date"}`}>
-              <span className="xs">{thaiDate(b.date, { day: undefined, month: undefined })}</span>
+              <span className="xs">{thaiDate(b.date, { day: undefined, month: undefined }, locale)}</span>
               <span className="d">{Number(day)}</span>
-              <span className="xs">{thaiDate(b.date, { weekday: undefined, day: undefined })}</span>
+              <span className="xs">{thaiDate(b.date, { weekday: undefined, day: undefined }, locale)}</span>
             </div>
             <div className="booking-body">
               <div className="between">
@@ -54,22 +60,22 @@ export default async function MyBookingsPage({ searchParams }: Props) {
               </div>
               <div className="row small" style={{ gap: 18 }}>
                 <b className="mono">{b.start}–{b.end}</b>
-                <span>{b.party} คน</span>
-                {b.status === "confirmed" && !b.is_past && <span className="muted">ยกเลิกได้ถึง <b className="mono">{thaiDateTime(b.cancel_deadline)}</b></span>}
+                <span>{b.party} {s.partySuffix}</span>
+                {b.status === "confirmed" && !b.is_past && <span className="muted">{s.cancelUntil} <b className="mono">{thaiDateTime(b.cancel_deadline, locale)}</b></span>}
               </div>
               <div className="row" style={{ gap: 8 }}>
-                {b.status === "cancelled" && <span className="badge">ยกเลิกแล้ว</span>}
+                {b.status === "cancelled" && <span className="badge">{s.cancelledBadge}</span>}
                 {b.can_modify && (
                   <>
-                    <Link href={`/bookings/${b.id}/edit`} className="btn btn-dark btn-sm">แก้ไข</Link>
-                    <CancelBookingButton id={b.id} />
+                    <Link href={`/bookings/${b.id}/edit`} className="btn btn-dark btn-sm">{s.edit}</Link>
+                    <CancelBookingButton id={b.id} locale={locale} />
                   </>
                 )}
                 {b.status === "confirmed" && !b.is_past && !b.can_modify && (
-                  <span className="small muted">เลยเวลาแก้ไข/ยกเลิกแล้ว ติดต่อร้านโดยตรง</span>
+                  <span className="small muted">{s.pastEditWindow}</span>
                 )}
                 {b.status === "confirmed" && b.is_past && (
-                  <Link href={`/restaurants/${b.restaurant_id}#review`} className="btn btn-outline btn-sm">เขียนรีวิว</Link>
+                  <Link href={`/restaurants/${b.restaurant_id}#review`} className="btn btn-outline btn-sm">{s.writeReview}</Link>
                 )}
               </div>
             </div>

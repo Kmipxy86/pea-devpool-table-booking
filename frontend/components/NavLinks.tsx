@@ -11,6 +11,7 @@ export default function NavLinks({ locale }: { locale: Locale }) {
   const links = [
     { href: "/", label: s.navAll, match: (p: string) => p === "/" || p.startsWith("/restaurants") },
     { href: "/bookings", label: s.navBookings, match: (p: string) => p.startsWith("/bookings") },
+    { href: "/owner", label: s.navOwner, match: (p: string) => p.startsWith("/owner") },
   ];
   return (
     <>

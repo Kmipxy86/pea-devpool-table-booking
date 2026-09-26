@@ -12,6 +12,7 @@ export default function RestaurantCard({ r, locale }: { r: Restaurant; locale: L
           // eslint-disable-next-line @next/next/no-img-element
           <img src={r.cover} alt={`รูปร้าน ${r.name}`} />
         )}
+        {r.is_mine && <span className="badge badge-dark">{s.yourRestaurant}</span>}
       </div>
       <div className="r-body">
         <div className="between">

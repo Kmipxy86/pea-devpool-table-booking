@@ -96,10 +96,11 @@ export default async function RestaurantPage({ params }: Props) {
         </section>
 
         {r.is_mine ? (
-          <aside className="alert alert-info" style={{ flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
-            <b>{s.yourRestaurant}</b>
-            <span className="small muted">{s.ownerAsideDesc}</span>
-            <Link href={`/owner/${r.id}`} className="btn btn-dark btn-sm">{s.viewRestaurantBookings}</Link>
+          <aside className="panel">
+            <h2>{s.yourRestaurant}</h2>
+            <p className="muted small">{s.ownerAsideDesc}</p>
+            <Link href={`/owner/${r.id}`} className="btn btn-dark btn-block">{s.viewRestaurantBookings}</Link>
+            <Link href={`/owner/${r.id}/edit`} className="btn btn-outline btn-block">{s.editRestaurant}</Link>
           </aside>
         ) : (
           <BookingPanel restaurantId={r.id} seats={r.seats} cancelMinutes={r.cancel_minutes} loggedIn={!!me} locale={locale} />

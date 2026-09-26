@@ -11,13 +11,11 @@ type Props = { searchParams: Promise<{ sort?: string; q?: string }> };
 export default async function HomePage({ searchParams }: Props) {
   const { sort = "rated", q = "" } = await searchParams;
   const qs = new URLSearchParams({ sort, q });
-  const [restaurants, locale] = await Promise.all([
+  const [list, locale] = await Promise.all([
     serverGet<Restaurant[]>(`/api/restaurants?${qs}`).then((r) => r ?? []),
     getLocale(),
   ]);
   const s = t[locale];
-  // ร้านที่ผู้ใช้เป็นเจ้าของเอง ไม่ต้องปนอยู่ใน feed ค้นหาของลูกค้า — ดูร้านตัวเองได้ที่ Owner console
-  const list = restaurants.filter((r) => !r.is_mine);
 
   const tab = (value: string, label: string) => (
     <Link

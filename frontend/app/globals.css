@@ -59,6 +59,18 @@ p { margin: 0; }
 .nav-link.active { background: var(--orange-50); color: var(--orange-800); font-weight: 600; }
 .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--gray-100); border: 1px solid var(--gray-200); display: grid; place-items: center; font-weight: 600; font-size: 14px; margin-left: 8px; }
 
+/* Owner console: header กลับสีเพื่อให้รู้สึกเป็นคนละโหมดกับฝั่งลูกค้า */
+.owner-header { background: var(--ink); border-bottom-color: var(--ink); }
+.owner-header .brand { color: var(--white); }
+.owner-header .brand:hover { color: var(--white); }
+.owner-header .brand-mark { background: var(--white); }
+.owner-header .nav-link { color: var(--gray-300); }
+.owner-header .nav-link:hover { background: rgba(255, 255, 255, 0.08); color: var(--white); }
+.owner-header .nav-link.active { background: var(--orange-500); color: var(--ink); }
+.owner-header .btn-ghost { color: var(--gray-300); }
+.owner-header .btn-ghost:hover:not(:disabled) { color: var(--white); background: rgba(255, 255, 255, 0.08); }
+.owner-header .avatar { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); color: var(--white); }
+
 /* ---------- buttons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

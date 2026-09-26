@@ -22,6 +22,7 @@ export default async function Header() {
           <LanguageToggle locale={locale} />
           {me ? (
             <>
+              <Link href="/owner" className="btn btn-outline btn-sm" style={{ marginLeft: 8 }}>{s.ownerConsoleLink}</Link>
               <span className="avatar" title={`${me.name} (${me.email})`}>{Array.from(me.name).slice(0, 2).join("")}</span>
               <LogoutButton label={s.logout} />
             </>

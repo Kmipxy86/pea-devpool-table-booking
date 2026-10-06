@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"testing"
 	"time"
 )
@@ -110,5 +111,161 @@ func TestCanModify(t *testing.T) {
 	}
 	if CanModify(start, 120, at("2026-10-11", "10:30")) {
 		t.Fatal("ร้านตั้ง 2 ชม. 10:30 ต้องยกเลิกไม่ได้")
+	}
+}
+
+func TestCancelDeadline(t *testing.T) {
+	start := at("2026-10-11", "12:00")
+	got := CancelDeadline(start, 90)
+	want := at("2026-10-11", "10:30")
+	if !got.Equal(want) {
+		t.Fatalf("deadline ควรเป็น %v ได้ %v", want, got)
+	}
+}
+
+func TestHoursOvernightAndCloseEff(t *testing.T) {
+	normal := Hours{OpenMin: 10 * 60, CloseMin: 22 * 60}
+	if normal.Overnight() {
+		t.Fatal("ร้าน 10:00-22:00 ไม่ใช่ข้ามคืน")
+	}
+	if normal.CloseEff() != 22*60 {
+		t.Fatalf("CloseEff ของร้านปกติต้องเท่ากับ CloseMin ได้ %d", normal.CloseEff())
+	}
+
+	overnight := Hours{OpenMin: 18 * 60, CloseMin: 2 * 60}
+	if !overnight.Overnight() {
+		t.Fatal("ร้าน 18:00-02:00 ต้องนับเป็นข้ามคืน")
+	}
+	if want := 2*60 + 24*60; overnight.CloseEff() != want {
+		t.Fatalf("CloseEff ของร้านข้ามคืนควรเป็น %d ได้ %d", want, overnight.CloseEff())
+	}
+
+	// ปิด-เปิดเวลาเดียวกัน (เช่น 00:00-00:00) ถือเป็นข้ามคืนด้วยตามเงื่อนไข CloseMin <= OpenMin
+	same := Hours{OpenMin: 9 * 60, CloseMin: 9 * 60}
+	if !same.Overnight() {
+		t.Fatal("เปิด-ปิดเวลาเดียวกันต้องถือเป็นข้ามคืน (เปิด 24 ชม. ของวันถัดไป)")
+	}
+}
+
+func TestClosedOn(t *testing.T) {
+	h := Hours{ClosedDays: (1 << uint(time.Sunday)) | (1 << uint(time.Monday))}
+	if !h.ClosedOn(time.Sunday) || !h.ClosedOn(time.Monday) {
+		t.Fatal("อาทิตย์กับจันทร์ต้องปิด")
+	}
+	for _, d := range []time.Weekday{time.Tuesday, time.Wednesday, time.Thursday, time.Friday, time.Saturday} {
+		if h.ClosedOn(d) {
+			t.Fatalf("%v ไม่ควรปิด", d)
+		}
+	}
+}
+
+func TestResolveBooking_InvalidTimeFormat(t *testing.T) {
+	h := Hours{OpenMin: 10 * 60, CloseMin: 22 * 60}
+	day := at("2026-10-11", "00:00")
+
+	if _, _, err := ResolveBooking(h, day, "25:00", "13:00"); err == nil {
+		t.Fatal("เวลาเริ่มรูปแบบผิด ต้อง error")
+	} else if ae, ok := err.(*apiError); !ok || ae.Status != http.StatusBadRequest {
+		t.Fatalf("ต้องเป็น 400 Bad Request ได้ %v", err)
+	}
+
+	if _, _, err := ResolveBooking(h, day, "12:00", "bad"); err == nil {
+		t.Fatal("เวลาสิ้นสุดรูปแบบผิด ต้อง error")
+	} else if ae, ok := err.(*apiError); !ok || ae.Status != http.StatusBadRequest {
+		t.Fatalf("ต้องเป็น 400 Bad Request ได้ %v", err)
+	}
+}
+
+func TestResolveBooking_OutOfHoursIsUnprocessable(t *testing.T) {
+	h := Hours{OpenMin: 10 * 60, CloseMin: 22 * 60}
+	day := at("2026-10-11", "00:00")
+	_, _, err := ResolveBooking(h, day, "21:30", "22:30")
+	if err == nil {
+		t.Fatal("เลยเวลาปิด ต้อง error")
+	}
+	if ae, ok := err.(*apiError); !ok || ae.Status != http.StatusUnprocessableEntity {
+		t.Fatalf("ต้องเป็น 422 Unprocessable Entity ได้ %v", err)
+	}
+}
+
+func TestBusinessDay_NormalHours(t *testing.T) {
+	h := Hours{OpenMin: 10 * 60, CloseMin: 22 * 60}
+	// ร้านปกติไม่ข้ามคืน วันทำการต้องตรงกับวันปฏิทินเสมอ ไม่ว่าจะจองช่วงไหนของวัน
+	if got := BusinessDay(h, at("2026-10-11", "10:30")); got.Day() != 11 {
+		t.Fatalf("ได้วันที่ %d", got.Day())
+	}
+	if got := BusinessDay(h, at("2026-10-11", "21:59")); got.Day() != 11 {
+		t.Fatalf("ได้วันที่ %d", got.Day())
+	}
+}
+
+func TestPeakOccupancy_EmptyAndClipping(t *testing.T) {
+	d := "2026-10-11"
+	if got := PeakOccupancy(nil, at(d, "12:00"), at(d, "13:00")); got != 0 {
+		t.Fatalf("ไม่มีการจองเลย peak ต้องเป็น 0 ได้ %d", got)
+	}
+
+	// การจองที่ยื่นออกไปนอกช่วง [from, to) ต้องถูกตัดให้เหลือแค่ส่วนที่ทับ
+	bookings := []Interval{{at(d, "11:00"), at(d, "14:00"), 6}}
+	if got := PeakOccupancy(bookings, at(d, "12:00"), at(d, "13:00")); got != 6 {
+		t.Fatalf("ช่วงที่ทับควรนับเต็ม 6 ได้ %d", got)
+	}
+
+	// การจองที่ไม่ทับช่วงที่สนใจเลย ต้องไม่ถูกนับ
+	outside := []Interval{{at(d, "08:00"), at(d, "09:00"), 10}}
+	if got := PeakOccupancy(outside, at(d, "12:00"), at(d, "13:00")); got != 0 {
+		t.Fatalf("การจองนอกช่วงไม่ควรถูกนับ ได้ %d", got)
+	}
+}
+
+func TestBuildSlots(t *testing.T) {
+	h := Hours{OpenMin: 12 * 60, CloseMin: 13 * 60} // เปิดแค่ 1 ชม. = 2 ช่วง 30 นาที
+	d := "2026-10-11"
+	day := at(d, "00:00")
+	bookings := []Interval{{at(d, "12:00"), at(d, "12:30"), 4}}
+
+	slots := BuildSlots(h, day, 10, bookings, at(d, "11:00"))
+	if len(slots) != 2 {
+		t.Fatalf("ร้านเปิด 1 ชม. ต้องได้ 2 ช่วงละ 30 นาที ได้ %d", len(slots))
+	}
+
+	first := slots[0]
+	if first.Start != "12:00" || first.End != "12:30" {
+		t.Fatalf("ช่วงแรกควรเป็น 12:00-12:30 ได้ %s-%s", first.Start, first.End)
+	}
+	if first.Used != 4 || first.Remaining != 6 {
+		t.Fatalf("ช่วงแรกใช้ไป 4 เหลือ 6 ได้ used=%d remaining=%d", first.Used, first.Remaining)
+	}
+	if first.Past {
+		t.Fatal("เวลาปัจจุบัน 11:00 ยังไม่ถึงช่วงแรก ไม่ควรเป็นอดีต")
+	}
+
+	second := slots[1]
+	if second.Used != 0 || second.Remaining != 10 {
+		t.Fatalf("ช่วงที่สองไม่มีการจอง ได้ used=%d remaining=%d", second.Used, second.Remaining)
+	}
+
+	// now อยู่หลังเวลาเริ่มของช่วงแรกแต่ยังไม่ถึงช่วงที่สอง (Past หมายถึง "เริ่มไปแล้ว" ไม่ใช่ "จบไปแล้ว")
+	later := BuildSlots(h, day, 10, bookings, at(d, "12:15"))
+	if !later[0].Past {
+		t.Fatal("เวลาปัจจุบันผ่านเวลาเริ่มของช่วงแรกไปแล้ว ต้อง Past=true")
+	}
+	if later[1].Past {
+		t.Fatal("ช่วงที่สองยังไม่เริ่ม ไม่ควร Past=true")
+	}
+}
+
+func TestBuildSlots_RemainingNeverNegative(t *testing.T) {
+	h := Hours{OpenMin: 12 * 60, CloseMin: 12*60 + 30}
+	d := "2026-10-11"
+	day := at(d, "00:00")
+	// จองเกินที่นั่งไปแล้ว (เช่นแก้กติกาทีหลัง) remaining ต้องไม่ติดลบ
+	bookings := []Interval{{at(d, "12:00"), at(d, "12:30"), 99}}
+	slots := BuildSlots(h, day, 10, bookings, at(d, "00:00"))
+	if len(slots) != 1 {
+		t.Fatalf("ต้องได้ 1 ช่วง ได้ %d", len(slots))
+	}
+	if slots[0].Remaining != 0 {
+		t.Fatalf("remaining ต้องไม่ติดลบ ได้ %d", slots[0].Remaining)
 	}
 }

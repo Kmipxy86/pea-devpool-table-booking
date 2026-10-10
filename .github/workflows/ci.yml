@@ -1,0 +1,72 @@
+name: CI
+
+# รันตอน push ขึ้น main และทุก pull request
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# ถ้า push ซ้ำเร็ว ๆ บน branch/PR เดิม ให้ยกเลิก run เก่าที่ยังค้าง
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (go test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          # ใช้เวอร์ชันตาม backend/go.mod เสมอ จะได้ไม่หลุดกัน
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Download modules
+        run: go mod download
+
+      - name: Verify formatting (gofmt)
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "ไฟล์ต่อไปนี้ยังไม่ได้ gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -vet=off ./...
+
+  frontend:
+    name: Frontend (next build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (รวม type-check ของ TypeScript)
+        run: npm run build
+        env:
+          # ปิด telemetry ของ Next.js ใน CI
+          NEXT_TELEMETRY_DISABLED: "1"

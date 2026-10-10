@@ -50,7 +50,7 @@ npm install
 npm run dev
 ```
 
-เปิด http://localhost:3002
+เปิด http://localhost:3000
 
 ### ตัวแปรที่ตั้งได้
 
